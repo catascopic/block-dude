@@ -1,13 +1,11 @@
 'use strict';
 	
-var Type = {
-	'EMPTY': 0,
-	'WALL' : 1,
-	'BLOCK' : 2,
-	'GOAL': 3,
-	'DUDE_LEFT': 4,
-	'DUDE_RIGHT': 5
-};
+var EMPTY = 0;
+var WALL = 1;
+var BLOCK = 2;
+var GOAL = 3;
+var DUDE_LEFT = 4;
+var DUDE_RIGHT = 5;
 
 var LEVELS = getLevels();
 
@@ -33,9 +31,9 @@ function draw() {
 		for (let j = 0; j < mapRow.length; j++) {
 			let sprite;
 			if (i == row && j == col) {
-				sprite = dir == 1 ? Type.DUDE_RIGHT : Type.DUDE_LEFT;
+				sprite = dir == 1 ? DUDE_RIGHT : DUDE_LEFT;
 			} else if (carrying && i == row - 1 && j == col) {
-				sprite = Type.BLOCK;
+				sprite = BLOCK;
 			} else {
 				sprite = mapRow[j];
 			}
@@ -91,7 +89,7 @@ function keyPress(event) {
 			return;
 	}
 	event.preventDefault();
-	if (map[row][col] == Type.GOAL) {
+	if (map[row][col] == GOAL) {
 		nextLevel();
 	} else if (moved) {
 		draw();
@@ -119,13 +117,14 @@ function moveDirection(dir) {
 }
 
 function up() {
-	// space in front of you must be solid
-	if (!isBlank(row, col + dir)
+	if (
+			// space in front of you must be solid
+			!isBlank(row, col + dir)
 			// space over your head you must be clear
 			&& isBlank(row - 1, col)
 			// space you're climbing to must be clear
 			&& isBlank(row - 1, col + dir) 
-			// if you're carrying a block, space 2 above you must be clear
+			// if you're carrying a block, 2 spaces over your head must be clear
 			&& (!carrying || isBlank(row - 2, col + dir))) {
 		col += dir;
 		row--;
@@ -135,32 +134,34 @@ function up() {
 }
 
 function down() {
-	let wasCarrying = carrying;
 	if (carrying) {
 		if (isBlank(row - 1, col + dir)) {
 			dropBlock(row - 1, col + dir);
+			return true;
 		}
-	} else {
-		// space in front of you must be a block
-		if (map[row][col + dir] == Type.BLOCK
+	} else if (
+			// space in front of you must be a block
+			map[row][col + dir] == BLOCK
 			// space over your head must be clear
 			&& isBlank(row - 1, col)
 			// space over the block must be clear
 			&& isBlank(row - 1, col + dir)) {
-			pickUpBlock(row, col + dir);
-		}
+		pickUpBlock(row, col + dir);
+		return true;
 	}
-	return carrying != wasCarrying;
+	return false;
 }
 
 function isBlank(i, j) {
-	return map[i][j] == Type.EMPTY || map[i][j] == Type.GOAL;
+	return map[i][j] == EMPTY || map[i][j] == GOAL;
 }
 
 function setDirection(newDir) {
-	let changed = (newDir != dir);
+	if (dir == newDir) {
+		return false;
+	}
 	dir = newDir;
-	return changed;
+	return true;
 }
 
 function move() {
@@ -178,7 +179,7 @@ function move() {
 }
 
 function pickUpBlock(i, j) {
-	map[i][j] = 0;
+	map[i][j] = EMPTY;
 	carrying = true;
 }
 
@@ -187,7 +188,7 @@ function dropBlock(i, j) {
 	while (isBlank(gravity + 1, j)) {
 		gravity++;
 	}
-	map[gravity][j] = 2;
+	map[gravity][j] = BLOCK;
 	carrying = false;
 }
 
@@ -239,19 +240,20 @@ function toggleControls() {
 }
 
 function showSaveMessage(message) {
-	document.getElementById('saveMessage').innerText = message;
+	saveMessage.innerText = message;
 }
 
-function copy(x) {
-	// don't judge me
-	return JSON.parse(JSON.stringify(x));
+function copy(array) {
+	let copyArray = new Array(array.length);
+	for (let i = 0; i < array.length; i++) {
+		copyArray[i] = array[i].slice(0);
+	}
+	return copyArray;
 }
 
 window.onload = function() {
-	sprites = new Image();
-	sprites.src = 'sprites.bmp';
-	canvas = document.getElementById('screen');
 	saveMessage = document.getElementById('screen');
+	canvas = document.getElementById('screen');
 	context = canvas.getContext('2d');
 	document.getElementById('levelSelector').value = 0;
 	setAutoClimb();
