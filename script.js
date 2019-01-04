@@ -14,6 +14,7 @@ var LEVELS = getLevels();
 var sprites;
 var canvas;
 var context;
+var saveMessage;
 
 var map;
 var row;
@@ -43,7 +44,7 @@ function draw() {
 					j * 24, i * 24, 24, 24); // canvas x, y, h, w	
 		}
 	}
-	document.getElementById('saveMessage').innerText = '';
+	showSaveMessage('');
 }
 
 function loadLevel(level) {
@@ -91,11 +92,7 @@ function keyPress(event) {
 	}
 	event.preventDefault();
 	if (map[row][col] == Type.GOAL) {
-		if (currentLevel == 10) {
-			winScreen();
-		} else {
-			nextLevel();
-		}
+		nextLevel();
 	} else if (moved) {
 		draw();
 	}
@@ -195,7 +192,7 @@ function dropBlock(i, j) {
 }
 
 function nextLevel() {
-	currentLevel++;
+	currentLevel = (currentLevel + 1) % 12;
 	loadNewLevel(currentLevel);
 	document.getElementById('levelSelector').value = currentLevel;
 }
@@ -208,7 +205,7 @@ function save() {
 		dir: dir,
 		carrying: carrying
 	};
-	document.getElementById('saveMessage').innerText = 'Game saved!';
+	showSaveMessage('Game saved!');
 }
 
 function load() {
@@ -239,11 +236,10 @@ function setAutoClimb() {
 
 function toggleControls() {
 	document.getElementById('controlBox').hidden ^= true;
-	
 }
 
-function winScreen() {
-	document.body.innerHTML = '<img src="sprites/ayy_lmao.jpg">';
+function showSaveMessage(message) {
+	document.getElementById('saveMessage').innerText = message;
 }
 
 function copy(x) {
@@ -255,6 +251,7 @@ window.onload = function() {
 	sprites = new Image();
 	sprites.src = 'sprites.bmp';
 	canvas = document.getElementById('screen');
+	saveMessage = document.getElementById('screen');
 	context = canvas.getContext('2d');
 	document.getElementById('levelSelector').value = 0;
 	setAutoClimb();
