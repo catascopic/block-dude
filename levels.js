@@ -198,47 +198,47 @@ var LEVELS_ASCII =
 
 function getLevels() {
 	return LEVELS_ASCII.map(function(level) {
-		let grid = [];
-		let playerRow;
-		let playerCol;
-		let playerDir;
+		let map = [];
+		let row;
+		let col;
+		let dir;
 		for (let i = 0; i < level.length; i++) {
 			let line = level[i];
-			let row = [];
+			let mapRow = [];
 			for (let j = 0; j < line.length; j++) {
 				let tile;
 				switch (line.charAt(j)) {
 				case ' ':
-					tile = Type.EMPTY;
+					tile = EMPTY;
 					break;
 				case '#':
-					tile = Type.WALL;
+					tile = WALL;
 					break;
 				case 'B':
-					tile = Type.BLOCK;
+					tile = BLOCK;
 					break;
 				case 'X':
-					tile = Type.GOAL;
+					tile = GOAL;
 					break;
 				case '>':
 				case '<':
-					tile = Type.EMPTY;
-					playerRow = i;
-					playerCol = j;
-					playerDir = line.charAt(i) == '>' ? 1 : -1;
+					tile = EMPTY;
+					row = i;
+					col = j;
+					dir = line.charAt(i) == '>' ? 1 : -1;
 					break;
 				default:
 					throw 'unknown char' + line.charAt(i);
 				}
-				row.push(tile);
+				mapRow.push(tile);
 			}
-			grid.push(row);
+			map.push(mapRow);
 		}
 		return {
-			map: grid,
-			row: playerRow,
-			col: playerCol,
-			dir: playerDir
+			map: map,
+			row: row,
+			col: col,
+			dir: dir
 		};
 	});
 }
