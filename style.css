@@ -2,23 +2,6 @@
 	font-family: monospace;
 }
 
-table {
-	border-collapse: collapse;
-}
-
-table td, table th {
-	padding: 0;
-}
-
-table img {
-	display: block;
-}
-
-#screenBox {
-	height: 456px; 
-	width: 696px;
-}
-
 #controlBox {
 	margin-left: 24px;
 }

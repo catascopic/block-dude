@@ -1,72 +1,58 @@
 'use strict';
-
-var SPRITES = [
-	'EMPTY',
-	'WALL',
-	'BLOCK',
-	'GOAL',
-];
 	
 var Type = {
 	'EMPTY': 0,
 	'WALL' : 1,
 	'BLOCK' : 2,
-	'GOAL': 3
+	'GOAL': 3,
+	'DUDE_LEFT': 4,
+	'DUDE_RIGHT': 5
 };
 
 var LEVELS = getLevels();
-	
+
+var sprites;
+var canvas;
+var context;
+
+var map;
 var row;
 var col;
 var dir;
 var carrying;
-var grid;
+
 var currentLevel = 0;
 var saveGame;
 var autoClimb = false;
 
 function draw() {
-	let screen = document.getElementById('screen');
-	let rows = screen.children;
-	for (let i = 0; i < grid.length; i++) {
-		let cells = rows[i].children;
-		for (let j = 0; j < grid[0].length; j++) {
+	context.clearRect(0, 0, canvas.width, canvas.height);
+	for (let i = 0; i < map.length; i++) {
+		let mapRow = map[i];
+		for (let j = 0; j < mapRow.length; j++) {
 			let sprite;
 			if (i == row && j == col) {
-				sprite = dir == 1 ? 'PLAYER_RIGHT' : 'PLAYER_LEFT';
+				sprite = dir == 1 ? Type.DUDE_RIGHT : Type.DUDE_LEFT;
 			} else if (carrying && i == row - 1 && j == col) {
-				sprite = 'BLOCK';
+				sprite = Type.BLOCK;
 			} else {
-				sprite = SPRITES[grid[i][j]];
+				sprite = mapRow[j];
 			}
-			cells[j].firstChild.src = 'sprites/' + sprite + '.bmp';
+			context.drawImage(sprites, 
+					sprite * 24, 0, 24, 24, // sprite x, y, h, w
+					j * 24, i * 24, 24, 24); // canvas x, y, h, w	
 		}
 	}
 	document.getElementById('saveMessage').innerText = '';
 }
 
-function resize() {
-	let screen = document.getElementById('screen');
-	while (screen.firstChild) {
-		screen.removeChild(screen.firstChild);
-	}
-	for (let i = 0; i < grid.length; i++) {
-		let tableRow = document.createElement('TR');
-		for (let j = 0; j < grid[i].length; j++) {
-			let cell = document.createElement('TD');			
-			cell.appendChild(document.createElement('IMG'));
-			tableRow.appendChild(cell);
-		}
-		screen.appendChild(tableRow);
-	}
-}
-
 function loadLevel(level) {
-	grid = copy(level.map);
+	map = copy(level.map);
 	row = level.row;
 	col = level.col;
 	dir = level.dir;
 	carrying = level.carrying || false;
+	draw();
 }
 
 function keyPress(event) {
@@ -104,7 +90,7 @@ function keyPress(event) {
 			return;
 	}
 	event.preventDefault();
-	if (grid[row][col] == Type.GOAL) {
+	if (map[row][col] == Type.GOAL) {
 		if (currentLevel == 10) {
 			winScreen();
 		} else {
@@ -159,7 +145,7 @@ function down() {
 		}
 	} else {
 		// space in front of you must be a block
-		if (grid[row][col + dir] == Type.BLOCK
+		if (map[row][col + dir] == Type.BLOCK
 			// space over your head must be clear
 			&& isBlank(row - 1, col)
 			// space over the block must be clear
@@ -171,7 +157,7 @@ function down() {
 }
 
 function isBlank(i, j) {
-	return grid[i][j] == Type.EMPTY || grid[i][j] == Type.GOAL;
+	return map[i][j] == Type.EMPTY || map[i][j] == Type.GOAL;
 }
 
 function setDirection(newDir) {
@@ -195,7 +181,7 @@ function move() {
 }
 
 function pickUpBlock(i, j) {
-	grid[i][j] = 0;
+	map[i][j] = 0;
 	carrying = true;
 }
 
@@ -204,7 +190,7 @@ function dropBlock(i, j) {
 	while (isBlank(gravity + 1, j)) {
 		gravity++;
 	}
-	grid[gravity][j] = 2;
+	map[gravity][j] = 2;
 	carrying = false;
 }
 
@@ -216,7 +202,7 @@ function nextLevel() {
 
 function save() {
 	saveGame = {
-		map: copy(grid),
+		map: copy(map),
 		row: row,
 		col: col,
 		dir: dir,
@@ -240,8 +226,6 @@ function restart() {
 function loadNewLevel(levelNum) {
 	saveGame = undefined;
 	loadLevel(LEVELS[levelNum]);
-	resize();
-	draw();
 }
 
 function selectLevel() {
@@ -268,21 +252,15 @@ function copy(x) {
 }
 
 window.onload = function() {
-	loadNewLevel(currentLevel);
+	sprites = new Image();
+	sprites.src = 'sprites.bmp';
+	canvas = document.getElementById('screen');
+	context = canvas.getContext('2d');
 	document.getElementById('levelSelector').value = 0;
 	setAutoClimb();
+	sprites = new Image();
+	sprites.addEventListener('load', function() {
+		loadNewLevel(currentLevel);
+	}, false);
+	sprites.src = 'sprites.bmp';
 };
-
-/*
-Level  1: tcP
-Level  2: ARo
-Level  3: CKs
-Level  4: daN
-Level  5: BAH
-Level  6: Ion
-Level  7: Twe
-Level  8: nTy
-Level  9: iRC
-Level 10: JmK
-Level 11: wTF
-*/
