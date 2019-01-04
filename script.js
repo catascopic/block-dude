@@ -8,6 +8,7 @@ var DUDE_LEFT = 4;
 var DUDE_RIGHT = 5;
 
 var LEVELS = getLevels();
+var SPRITE_SIZE = 24;
 
 var sprites;
 var canvas;
@@ -19,6 +20,7 @@ var row;
 var col;
 var dir;
 var carrying;
+var moveLog = [];
 
 var currentLevel = 0;
 var saveGame;
@@ -37,9 +39,11 @@ function draw() {
 			} else {
 				sprite = mapRow[j];
 			}
-			context.drawImage(sprites, 
-					sprite * 24, 0, 24, 24, // sprite x, y, h, w
-					j * 24, i * 24, 24, 24); // canvas x, y, h, w	
+			context.drawImage(sprites,
+					// sprite x, y, h, w
+					sprite * SPRITE_SIZE, 0, SPRITE_SIZE, SPRITE_SIZE,
+					// canvas x, y, h, w
+					j * SPRITE_SIZE, i * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE);
 		}
 	}
 	showSaveMessage('');
@@ -106,7 +110,7 @@ function right() {
 
 function moveDirection(dir) {
 	let moved = setDirection(dir);
-	moved |= move();
+	moved |= moveForward();
 	if (moved) {
 		return true;
 	}
@@ -164,7 +168,7 @@ function setDirection(newDir) {
 	return true;
 }
 
-function move() {
+function moveForward() {
 	if (isBlank(row, col + dir)) {
 		col += dir;
 		if (carrying && !isBlank(row - 1, col)) {
@@ -244,11 +248,9 @@ function showSaveMessage(message) {
 }
 
 function copy(array) {
-	let copyArray = new Array(array.length);
-	for (let i = 0; i < array.length; i++) {
-		copyArray[i] = array[i].slice(0);
-	}
-	return copyArray;
+	return array.map(function(arrayRow) {
+		return arrayRow.slice();
+	});
 }
 
 window.onload = function() {

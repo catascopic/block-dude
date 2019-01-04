@@ -6,7 +6,7 @@
 	margin-left: 24px;
 }
 
-#controlBox div:not(:last-child) {
+#controlBox > *:not(:last-child) {
 	margin-bottom: 6px;
 }
 
