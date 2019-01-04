@@ -59,23 +59,24 @@ function loadLevel(level) {
 }
 
 function keyPress(event) {
-	let moved = false;
+	clearInterval(intervalId);
+	let move = false;
 	switch(event.key) {
 		case 'ArrowLeft': 
 		case 'a':
-			moved = left();
+			move = left();
 			break;
 		case 'ArrowRight':
 		case 'd':
-			moved = right();
+			move = right();
 			break;
 		case 'ArrowUp':
 		case 'w':
-			moved = up();
+			move = up();
 			break;
 		case 'ArrowDown':
 		case 's':
-			moved = down();
+			move = down();
 			break;
 		case '=':
 			save();
@@ -95,7 +96,8 @@ function keyPress(event) {
 	event.preventDefault();
 	if (map[row][col] == GOAL) {
 		nextLevel();
-	} else if (moved) {
+	} else if (move) {
+		moveLog.push(move);
 		draw();
 	}
 }
@@ -112,7 +114,7 @@ function moveDirection(dir) {
 	let moved = setDirection(dir);
 	moved |= moveForward();
 	if (moved) {
-		return true;
+		return dir == 1 ? 'R' : 'L';
 	}
 	if (autoClimb) {
 		return up();
@@ -132,7 +134,7 @@ function up() {
 			&& (!carrying || isBlank(row - 2, col + dir))) {
 		col += dir;
 		row--;
-		return true;
+		return 'U';
 	}
 	return false;
 }
@@ -141,7 +143,7 @@ function down() {
 	if (carrying) {
 		if (isBlank(row - 1, col + dir)) {
 			dropBlock(row - 1, col + dir);
-			return true;
+			return 'D';
 		}
 	} else if (
 			// space in front of you must be a block
@@ -151,7 +153,7 @@ function down() {
 			// space over the block must be clear
 			&& isBlank(row - 1, col + dir)) {
 		pickUpBlock(row, col + dir);
-		return true;
+		return 'D';
 	}
 	return false;
 }
@@ -233,6 +235,32 @@ function loadNewLevel(levelNum) {
 function selectLevel() {
 	currentLevel = Number(document.getElementById('levelSelector').value);
 	loadNewLevel(currentLevel);
+}
+
+var intervalId;
+
+function replay(moveList) {
+	let index = 0;
+	intervalId = setInterval(function() {
+		switch (moveList.charAt(index++)) {
+			case 'U':
+				up();
+				break;
+			case 'D':
+				down();
+				break;
+			case 'L':
+				left();
+				break;
+			case 'R':
+				right();
+				break;
+		}
+		draw();
+		if (index >= moveList.length) {
+			clearInterval(intervalId);
+		}
+	}, 200);
 }
 
 function setAutoClimb() {
