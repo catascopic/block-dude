@@ -20,7 +20,6 @@ var row;
 var col;
 var dir;
 var carrying;
-var moveLog = [];
 
 var currentLevel = 0;
 var saveGame;
