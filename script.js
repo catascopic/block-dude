@@ -252,7 +252,7 @@ function copy(array) {
 }
 
 window.onload = function() {
-	saveMessage = document.getElementById('screen');
+	saveMessage = document.getElementById('saveMessage');
 	canvas = document.getElementById('screen');
 	context = canvas.getContext('2d');
 	document.getElementById('levelSelector').value = 0;
