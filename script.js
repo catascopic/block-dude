@@ -55,11 +55,14 @@ function loadLevel(level) {
 	col = level.col;
 	dir = level.dir;
 	carrying = level.carrying || false;
+	moveLog = (level.log || '').split('');
 	draw();
 }
 
 function keyPress(event) {
-	clearInterval(intervalId);
+	if (stopReplay()) {
+		return;
+	}
 	let move = false;
 	switch(event.key) {
 		case 'ArrowLeft': 
@@ -210,7 +213,8 @@ function save() {
 		row: row,
 		col: col,
 		dir: dir,
-		carrying: carrying
+		carrying: carrying,
+		log: moveLog.join('')
 	};
 	showSaveMessage('Game saved!');
 }
@@ -242,7 +246,8 @@ var intervalId;
 function replay(moveList) {
 	let index = 0;
 	intervalId = setInterval(function() {
-		switch (moveList.charAt(index++)) {
+		let code = moveList.charAt(index++);
+		switch (code) {
 			case 'U':
 				up();
 				break;
@@ -256,11 +261,21 @@ function replay(moveList) {
 				right();
 				break;
 		}
+		moveLog.push(code);
 		draw();
 		if (index >= moveList.length) {
-			clearInterval(intervalId);
+			stopReplay();
 		}
-	}, 200);
+	}, 100);
+}
+
+function stopReplay() {
+	if (intervalId) {
+		clearInterval(intervalId);
+		intervalId = undefined;
+		return true;
+	}
+	return false;
 }
 
 function setAutoClimb() {
