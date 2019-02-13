@@ -27,25 +27,26 @@ var autoClimb = false;
 
 function draw() {
 	context.clearRect(0, 0, canvas.width, canvas.height);
-	for (let i = 0; i < map.length; i++) {
-		let mapRow = map[i];
-		for (let j = 0; j < mapRow.length; j++) {
-			let sprite;
-			if (i == row && j == col) {
-				sprite = dir == 1 ? DUDE_RIGHT : DUDE_LEFT;
-			} else if (carrying && i == row - 1 && j == col) {
-				sprite = BLOCK;
-			} else {
-				sprite = mapRow[j];
-			}
-			context.drawImage(sprites,
-					// sprite x, y, h, w
-					sprite * SPRITE_SIZE, 0, SPRITE_SIZE, SPRITE_SIZE,
-					// canvas x, y, h, w
-					j * SPRITE_SIZE, i * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE);
+	let height = map.length;
+	let width = map[0].length;
+	for (let i = 0; i < height; i++) {
+		for (let j = 0; j < width; j++) {
+			drawSprite(i, j, map[i][j]);
 		}
 	}
+	drawSprite(row, col, dir == 1 ? DUDE_RIGHT : DUDE_LEFT);
+	if (carrying) {
+		drawSprite(row - 1, col, BLOCK);
+	}
 	showSaveMessage('');
+}
+
+function drawSprite(i, j, sprite) {
+	context.drawImage(sprites,
+			// sprite x, y, h, w
+			sprite * SPRITE_SIZE, 0, SPRITE_SIZE, SPRITE_SIZE,
+			// canvas x, y, h, w
+			j * SPRITE_SIZE, i * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE);
 }
 
 function loadLevel(level) {
@@ -57,7 +58,7 @@ function loadLevel(level) {
 	draw();
 }
 
-function keyPress(event) {
+function key(event) {
 	let moved = false;
 	switch(event.key) {
 		case 'ArrowLeft': 
