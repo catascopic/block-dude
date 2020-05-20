@@ -1,14 +1,17 @@
 'use strict';
 	
-var EMPTY = 0;
-var WALL = 1;
-var BLOCK = 2;
-var GOAL = 3;
-var DUDE_LEFT = 4;
-var DUDE_RIGHT = 5;
+const EMPTY = 0;
+const WALL = 1;
+const BLOCK = 2;
+const GOAL = 3;
+const DUDE_LEFT = 4;
+const DUDE_RIGHT = 5;
 
-var LEVELS = getLevels();
-var SPRITE_SIZE = 24;
+const SPRITE_DIM = 8;
+const SCALE = 3;
+const SPRITE_DIM_SCALE = SPRITE_DIM * SCALE;
+
+var levels = getLevels();
 
 var sprites;
 var canvas;
@@ -44,9 +47,9 @@ function draw() {
 function drawSprite(i, j, sprite) {
 	context.drawImage(sprites,
 			// sprite x, y, h, w
-			sprite * SPRITE_SIZE, 0, SPRITE_SIZE, SPRITE_SIZE,
+			sprite * SPRITE_DIM, 0, SPRITE_DIM, SPRITE_DIM,
 			// canvas x, y, h, w
-			j * SPRITE_SIZE, i * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE);
+			j * SPRITE_DIM_SCALE, i * SPRITE_DIM_SCALE, SPRITE_DIM_SCALE, SPRITE_DIM_SCALE);
 }
 
 function loadLevel(level) {
@@ -221,13 +224,13 @@ function load() {
 }
 
 function restart() {
-	loadLevel(LEVELS[currentLevel]);
+	loadLevel(levels[currentLevel]);
 	draw();
 }
 
 function loadNewLevel(levelNum) {
 	saveGame = undefined;
-	loadLevel(LEVELS[levelNum]);
+	loadLevel(levels[levelNum]);
 }
 
 function selectLevel() {
@@ -248,15 +251,14 @@ function showSaveMessage(message) {
 }
 
 function copy(array) {
-	return array.map(function(arrayRow) {
-		return arrayRow.slice();
-	});
+	return array.map(row => row.slice());
 }
 
 window.onload = function() {
 	saveMessage = document.getElementById('saveMessage');
 	canvas = document.getElementById('screen');
 	context = canvas.getContext('2d');
+	context.imageSmoothingEnabled = false;
 	document.getElementById('levelSelector').value = 0;
 	setAutoClimb();
 	sprites = new Image();
