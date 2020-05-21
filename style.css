@@ -21,3 +21,8 @@ canvas {
 	margin-right: 24px;
 	margin-bottom: 24px;
 }
+
+.hide {
+	/* I don't like this, but it's the easiest way. hidden=true doesn't work when you specify the display property.	*/
+	display: none !important;
+}

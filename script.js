@@ -7,10 +7,11 @@ const GOAL = 3;
 const DUDE_LEFT = 4;
 const DUDE_RIGHT = 5;
 
-const BASE_SCREEN_WIDTH = 232;
-const BASE_SCREEN_HEIGHT = 152;
 
 const SPRITE_SRC_SIZE = 8;
+const BASE_SCREEN_WIDTH = SPRITE_SRC_SIZE * 29;
+const BASE_SCREEN_HEIGHT = SPRITE_SRC_SIZE * 19;
+
 var scale = 3;
 var spriteDispSize = SPRITE_SRC_SIZE * scale;
 
@@ -29,7 +30,7 @@ var carrying;
 
 var currentLevel = 0;
 var saveGame;
-var autoClimb = false;
+var autoClimb;
 
 function draw() {
 	context.clearRect(0, 0, canvas.width, canvas.height);
@@ -246,7 +247,7 @@ function setAutoClimb() {
 }
 
 function toggleControls() {
-	document.getElementById('controlBox').hidden ^= true;
+	document.getElementById('controlBox').classList.toggle('hide');
 }
 
 function showSaveMessage(message) {
