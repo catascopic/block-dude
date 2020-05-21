@@ -2,7 +2,14 @@
 	font-family: monospace;
 }
 
+body {
+	background-color: #E0DFDB;
+}
+
 #controlBox {
+	border: 1px dotted black;
+	
+	padding: 4px;
 	display: inline-block;
 	vertical-align: top;
 }
@@ -23,6 +30,9 @@ canvas {
 }
 
 .hide {
-	/* I don't like this, but it's the easiest way. hidden=true doesn't work when you specify the display property.	*/
+	
+	/* I don't like this, but it's the easiest way. 
+	hidden=true doesn't work when you specify the display property.	*/
+	
 	display: none !important;
 }

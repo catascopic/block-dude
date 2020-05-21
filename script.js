@@ -7,7 +7,6 @@ const GOAL = 3;
 const DUDE_LEFT = 4;
 const DUDE_RIGHT = 5;
 
-
 const SPRITE_SRC_SIZE = 8;
 const BASE_SCREEN_WIDTH = SPRITE_SRC_SIZE * 29;
 const BASE_SCREEN_HEIGHT = SPRITE_SRC_SIZE * 19;
@@ -20,7 +19,6 @@ var levels = getLevels();
 var sprites;
 var canvas;
 var context;
-var saveMessage;
 
 var map;
 var row;
@@ -28,9 +26,11 @@ var col;
 var dir;
 var carrying;
 
-var currentLevel = 0;
-var saveGame;
+var levelIndex = 0;
 var autoClimb;
+
+var undoMoves = [];
+var redoMoves = [];
 
 function draw() {
 	context.clearRect(0, 0, canvas.width, canvas.height);
@@ -45,7 +45,6 @@ function draw() {
 	if (carrying) {
 		drawSprite(row - 1, col, BLOCK);
 	}
-	showSaveMessage('');
 }
 
 function drawSprite(i, j, sprite) {
@@ -56,42 +55,32 @@ function drawSprite(i, j, sprite) {
 			j * spriteDispSize, i * spriteDispSize, spriteDispSize, spriteDispSize);
 }
 
-function loadLevel(level) {
-	map = copy(level.map);
-	row = level.row;
-	col = level.col;
-	dir = level.dir;
-	carrying = level.carrying || false;
-	draw();
-}
-
 function key(event) {
-	let moved = false;
+	let moved = null;
 	switch(event.key) {
-		case 'ArrowLeft': 
-		case 'a':
+		case 'a': case 'ArrowLeft': 
 			moved = left();
 			break;
-		case 'ArrowRight':
-		case 'd':
+		case 'd': case 'ArrowRight':
 			moved = right();
 			break;
-		case 'ArrowUp':
-		case 'w':
+		case 'w': case 'ArrowUp':
 			moved = up();
 			break;
-		case 'ArrowDown':
-		case 's':
+		case 's': case 'ArrowDown': 
 			moved = down();
 			break;
-		case '=':
-			save();
+		case 'z':
+			undo();
 			break;
-		case '-':
-			load();
+		case 'y':
+			redo();
 			break;
 		case 'm':
 			restart();
+			break;
+		case 'b':
+			document.body.style.backgroundColor = BACKGROUNDS[backgroundIndex++ % BACKGROUNDS.length];
 			break;
 		case 'Enter':
 			toggleControls();
@@ -103,9 +92,14 @@ function key(event) {
 	if (map[row][col] == GOAL) {
 		nextLevel();
 	} else if (moved) {
+		undoMoves.push(moved);
+		// is this the best way to clear the stack?
+		redoMoves.length = 0;
 		draw();
 	}
 }
+
+// MOVE FUNCTION
 
 function left() {			
 	return moveDirection(-1);
@@ -115,16 +109,40 @@ function right() {
 	return moveDirection(1);
 }
 
-function moveDirection(dir) {
-	let moved = setDirection(dir);
-	moved |= moveForward();
+function moveDirection(newDir) {
+	let moved = false;
+	let result = {};
+	
+	if (dir != newDir) {
+		dir = newDir;
+		moved = true;
+		result.flip = -1;
+	}
+
+	if (isEmpty(row, col + dir)) {
+		col += dir;
+		moved = true;
+		result.step = dir;
+		if (carrying && !isEmpty(row - 1, col)) {
+			result.drop = dropBlock(row - 1, col - dir);
+		}
+		if (isEmpty(row + 1, col)) {
+			let gravity = 0
+			do {
+				gravity++;
+			} while (isEmpty(row + gravity + 1, col));
+			row += gravity;
+			result.fall = gravity;
+		}
+	}
+	
 	if (moved) {
-		return true;
+		return result;
 	}
 	if (autoClimb) {
 		return up();
 	}
-	return false;
+	return null;
 }
 
 function up() {
@@ -139,16 +157,15 @@ function up() {
 			&& (!carrying || isEmpty(row - 2, col + dir))) {
 		col += dir;
 		row--;
-		return true;
+		return { step: dir, fall: -1 };
 	}
-	return false;
+	return null;
 }
 
 function down() {
 	if (carrying) {
 		if (map[row - 1][col + dir] == EMPTY) {
-			dropBlock(row - 1, col + dir);
-			return true;
+			return { drop: dropBlock(row - 1, col + dir) };
 		}
 	} else if (
 			// space in front of you must be a block
@@ -158,35 +175,13 @@ function down() {
 			// space over the block must be clear
 			&& isEmpty(row - 1, col + dir)) {
 		pickUpBlock(row, col + dir);
-		return true;
+		return { lift: true };
 	}
-	return false;
+	return null;
 }
 
 function isEmpty(i, j) {
 	return map[i][j] == EMPTY || map[i][j] == GOAL;
-}
-
-function setDirection(newDir) {
-	if (dir == newDir) {
-		return false;
-	}
-	dir = newDir;
-	return true;
-}
-
-function moveForward() {
-	if (isEmpty(row, col + dir)) {
-		col += dir;
-		if (carrying && !isEmpty(row - 1, col)) {
-			dropBlock(row - 1, col - dir);
-		}
-		while (isEmpty(row + 1, col)) {
-			row++;
-		}
-		return true;
-	}
-	return false;
 }
 
 function pickUpBlock(i, j) {
@@ -201,45 +196,78 @@ function dropBlock(i, j) {
 	}
 	map[gravity][j] = BLOCK;
 	carrying = false;
-}
-
-function nextLevel() {
-	currentLevel = (currentLevel + 1) % 12;
-	loadNewLevel(currentLevel);
-	document.getElementById('levelSelector').value = currentLevel;
-}
-
-function save() {
-	saveGame = {
-		map: copy(map),
-		row: row,
-		col: col,
-		dir: dir,
-		carrying: carrying
+	return {
+		row: gravity,
+		col: j
 	};
-	showSaveMessage('Game saved!');
 }
 
-function load() {
-	if (saveGame) {
-		loadLevel(saveGame);
+// UNDO FUNCTIONS
+
+function undo() {
+	if (undoMoves.length) {
+		let move = undoMoves.pop();
+		redoMoves.push(move);
+		dir *= move.flip || 1;
+		row -= move.fall || 0;
+		col -= move.step || 0;
+		if (move.drop) {
+			map[move.drop.row][move.drop.col] = EMPTY;
+			carrying = true;
+		} else if (move.lift) {
+			map[row][col + dir] = BLOCK;
+			carrying = false;
+		}
 		draw();
 	}
 }
 
-function restart() {
-	loadLevel(levels[currentLevel]);
+function redo() {
+	if (redoMoves.length) {
+		let move = redoMoves.pop();
+		undoMoves.push(move);
+		dir *= move.flip || 1;
+		row += move.fall || 0;
+		col += move.step || 0;
+		if (move.drop) {
+			map[move.drop.row][move.drop.col] = BLOCK;
+			carrying = false;
+		} else if (move.lift) {
+			map[row][col + dir] = EMPTY;
+			carrying = true;
+		}
+		draw();
+	}
+}
+
+// LEVEL FUNCTIONS
+
+function loadLevel() {
+	let level = levels[levelIndex];
+	map = copy(level.map);
+	row = level.row;
+	col = level.col;
+	dir = level.dir;
+	carrying = level.carrying || false;
+	undoMoves.length = 0;
+	redoMoves.length = 0;
 	draw();
 }
 
-function loadNewLevel(levelNum) {
-	saveGame = undefined;
-	loadLevel(levels[levelNum]);
+function nextLevel() {
+	levelIndex = (levelIndex + 1) % levels.length;
+	loadLevel();
+	document.getElementById('levelSelector').value = levelIndex;
+}
+
+function restart() {
+	loadLevel();
+	draw();
 }
 
 function selectLevel() {
-	currentLevel = Number(document.getElementById('levelSelector').value);
-	loadNewLevel(currentLevel);
+	levelIndex = Number(document.getElementById('levelSelector').value);
+	loadLevel();
 }
 
 function setAutoClimb() {
@@ -248,14 +276,6 @@ function setAutoClimb() {
 
 function toggleControls() {
 	document.getElementById('controlBox').classList.toggle('hide');
-}
-
-function showSaveMessage(message) {
-	saveMessage.innerText = message;
-}
-
-function copy(array) {
-	return array.map(row => row.slice());
 }
 
 function rescale(newScale) {
@@ -267,8 +287,13 @@ function rescale(newScale) {
 	draw();
 }
 
+function copy(_2dArray) {
+	return _2dArray.map(function(subArray) {
+		return subArray.slice();
+	});
+}
+
 window.onload = function() {
-	saveMessage = document.getElementById('saveMessage');
 	canvas = document.getElementById('screen');
 	context = canvas.getContext('2d');
 	context.imageSmoothingEnabled = false;
@@ -276,7 +301,21 @@ window.onload = function() {
 	setAutoClimb();
 	sprites = new Image();
 	sprites.addEventListener('load', function() {
-		loadNewLevel(currentLevel);
+		loadLevel();
 	}, false);
-	sprites.src = 'sprites.bmp';
+	sprites.src = 'sprites.png';
 };
+
+// EXPERIMENTAL
+
+var backgroundIndex = 0;
+
+const BACKGROUNDS = [
+	"#D8D8BF",
+	"#CBCAB6",
+	"#D0D2C4", //
+	"#E8F1D4",
+	"#E0DFDB", //
+	"#C6C3B5",
+	"white"
+];
