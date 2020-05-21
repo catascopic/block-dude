@@ -7,8 +7,12 @@ const GOAL = 3;
 const DUDE_LEFT = 4;
 const DUDE_RIGHT = 5;
 
-var SPRITE_SRC_SIZE = 8;
-const SPRITE_DISP_SIZE = 24;
+const BASE_SCREEN_WIDTH = 232;
+const BASE_SCREEN_HEIGHT = 152;
+
+const SPRITE_SRC_SIZE = 8;
+var scale = 3;
+var spriteDispSize = SPRITE_SRC_SIZE * scale;
 
 var levels = getLevels();
 
@@ -48,7 +52,7 @@ function drawSprite(i, j, sprite) {
 			// sprite x, y, h, w
 			sprite * SPRITE_SRC_SIZE, 0, SPRITE_SRC_SIZE, SPRITE_SRC_SIZE,
 			// canvas x, y, h, w
-			j * SPRITE_DISP_SIZE, i * SPRITE_DISP_SIZE, SPRITE_DISP_SIZE, SPRITE_DISP_SIZE);
+			j * spriteDispSize, i * spriteDispSize, spriteDispSize, spriteDispSize);
 }
 
 function loadLevel(level) {
@@ -251,6 +255,15 @@ function showSaveMessage(message) {
 
 function copy(array) {
 	return array.map(row => row.slice());
+}
+
+function rescale(newScale) {
+	scale = newScale;
+	spriteDispSize = SPRITE_SRC_SIZE * scale;
+	canvas.width = BASE_SCREEN_WIDTH * scale;
+	canvas.height = BASE_SCREEN_HEIGHT * scale;
+	context.imageSmoothingEnabled = false;
+	draw();
 }
 
 window.onload = function() {

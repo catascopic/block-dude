@@ -3,19 +3,21 @@
 }
 
 #controlBox {
-	margin-left: 24px;
+	display: inline-block;
+	vertical-align: top;
 }
 
 #controlBox > *:not(:last-child) {
 	margin-bottom: 6px;
 }
 
-body {
-	display: flex;
-}
-
 canvas {
+	display: inline-block;
+
 	image-rendering: pixelated;
 	image-rendering: -moz-crisp-edges;
 	image-rendering: crisp-edges;
+
+	margin-right: 24px;
+	margin-bottom: 24px;
 }
