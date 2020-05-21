@@ -7,9 +7,8 @@ const GOAL = 3;
 const DUDE_LEFT = 4;
 const DUDE_RIGHT = 5;
 
-const SPRITE_DIM = 8;
-const SCALE = 3;
-const SPRITE_DIM_SCALE = SPRITE_DIM * SCALE;
+var SPRITE_SRC_SIZE = 8;
+const SPRITE_DISP_SIZE = 24;
 
 var levels = getLevels();
 
@@ -47,9 +46,9 @@ function draw() {
 function drawSprite(i, j, sprite) {
 	context.drawImage(sprites,
 			// sprite x, y, h, w
-			sprite * SPRITE_DIM, 0, SPRITE_DIM, SPRITE_DIM,
+			sprite * SPRITE_SRC_SIZE, 0, SPRITE_SRC_SIZE, SPRITE_SRC_SIZE,
 			// canvas x, y, h, w
-			j * SPRITE_DIM_SCALE, i * SPRITE_DIM_SCALE, SPRITE_DIM_SCALE, SPRITE_DIM_SCALE);
+			j * SPRITE_DISP_SIZE, i * SPRITE_DISP_SIZE, SPRITE_DISP_SIZE, SPRITE_DISP_SIZE);
 }
 
 function loadLevel(level) {

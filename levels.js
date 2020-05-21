@@ -198,16 +198,17 @@ var LEVELS_ASCII =
 
 function getLevels() {
 	return LEVELS_ASCII.map(function(level) {
-		let map = [];
+		let map = Array(level.length);
 		let row;
 		let col;
 		let dir;
 		for (let i = 0; i < level.length; i++) {
 			let line = level[i];
-			let mapRow = [];
+			let mapRow = Array(line.length);
 			for (let j = 0; j < line.length; j++) {
 				let tile;
-				switch (line.charAt(j)) {
+				let c = line.charAt(j)
+				switch (c) {
 				case ' ':
 					tile = EMPTY;
 					break;
@@ -225,14 +226,14 @@ function getLevels() {
 					tile = EMPTY;
 					row = i;
 					col = j;
-					dir = line.charAt(i) == '>' ? 1 : -1;
+					dir = c == '>' ? 1 : -1;
 					break;
 				default:
-					throw 'unknown char' + line.charAt(i);
+					throw 'unknown char: ' + c;
 				}
-				mapRow.push(tile);
+				mapRow[j] = tile;
 			}
-			map.push(mapRow);
+			map[i] = mapRow;
 		}
 		return {
 			map: map,
