@@ -130,13 +130,13 @@ function moveDirection(dir) {
 function up() {
 	if (
 			// space in front of you must be solid
-			!isBlank(row, col + dir)
+			!isEmpty(row, col + dir)
 			// space over your head you must be clear
-			&& isBlank(row - 1, col)
+			&& isEmpty(row - 1, col)
 			// space you're climbing to must be clear
-			&& isBlank(row - 1, col + dir) 
+			&& isEmpty(row - 1, col + dir) 
 			// if you're carrying a block, 2 spaces over your head must be clear
-			&& (!carrying || isBlank(row - 2, col + dir))) {
+			&& (!carrying || isEmpty(row - 2, col + dir))) {
 		col += dir;
 		row--;
 		return true;
@@ -146,7 +146,7 @@ function up() {
 
 function down() {
 	if (carrying) {
-		if (isBlank(row - 1, col + dir)) {
+		if (map[row - 1][col + dir] == EMPTY) {
 			dropBlock(row - 1, col + dir);
 			return true;
 		}
@@ -154,16 +154,16 @@ function down() {
 			// space in front of you must be a block
 			map[row][col + dir] == BLOCK
 			// space over your head must be clear
-			&& isBlank(row - 1, col)
+			&& isEmpty(row - 1, col)
 			// space over the block must be clear
-			&& isBlank(row - 1, col + dir)) {
+			&& isEmpty(row - 1, col + dir)) {
 		pickUpBlock(row, col + dir);
 		return true;
 	}
 	return false;
 }
 
-function isBlank(i, j) {
+function isEmpty(i, j) {
 	return map[i][j] == EMPTY || map[i][j] == GOAL;
 }
 
@@ -176,12 +176,12 @@ function setDirection(newDir) {
 }
 
 function moveForward() {
-	if (isBlank(row, col + dir)) {
+	if (isEmpty(row, col + dir)) {
 		col += dir;
-		if (carrying && !isBlank(row - 1, col)) {
+		if (carrying && !isEmpty(row - 1, col)) {
 			dropBlock(row - 1, col - dir);
 		}
-		while (isBlank(row + 1, col)) {
+		while (isEmpty(row + 1, col)) {
 			row++;
 		}
 		return true;
@@ -196,7 +196,7 @@ function pickUpBlock(i, j) {
 
 function dropBlock(i, j) {
 	let gravity = i;
-	while (isBlank(gravity + 1, j)) {
+	while (map[gravity + 1][j] == EMPTY) {
 		gravity++;
 	}
 	map[gravity][j] = BLOCK;
