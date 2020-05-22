@@ -45,6 +45,7 @@ function draw() {
 	if (carrying) {
 		drawSprite(row - 1, col, BLOCK);
 	}
+	document.getElementById('history').innerText = undoMoves.map(m => m.move[0]).join('');
 }
 
 function drawSprite(i, j, sprite) {
@@ -102,27 +103,27 @@ function key(event) {
 // MOVE FUNCTION
 
 function left() {			
-	return moveDirection(-1);
+	return moveDirection('Left', -1);
 }
 
 function right() {
-	return moveDirection(1);
+	return moveDirection('Right', 1);
 }
 
-function moveDirection(newDir) {
+function moveDirection(move, newDir) {
 	let moved = false;
-	let result = {};
+	let result = { move: move };
 	
 	if (dir != newDir) {
 		dir = newDir;
 		moved = true;
-		result.flip = -1;
+		result.turn = -1;
 	}
 
 	if (isEmpty(row, col + dir)) {
 		col += dir;
 		moved = true;
-		result.step = dir;
+		result.step = 1;
 		if (carrying && !isEmpty(row - 1, col)) {
 			result.drop = dropBlock(row - 1, col - dir);
 		}
@@ -142,7 +143,7 @@ function moveDirection(newDir) {
 	if (autoClimb) {
 		return up();
 	}
-	return null;
+	return false;
 }
 
 function up() {
@@ -157,15 +158,18 @@ function up() {
 			&& (!carrying || isEmpty(row - 2, col + dir))) {
 		col += dir;
 		row--;
-		return { step: dir, fall: -1 };
+		return { move: 'Up', step: 1, fall: -1 };
 	}
-	return null;
+	return false;
 }
 
 function down() {
 	if (carrying) {
 		if (map[row - 1][col + dir] == EMPTY) {
-			return { drop: dropBlock(row - 1, col + dir) };
+			return { 
+				move: 'Down',
+				drop: dropBlock(row - 1, col + dir) 
+			};
 		}
 	} else if (
 			// space in front of you must be a block
@@ -175,9 +179,12 @@ function down() {
 			// space over the block must be clear
 			&& isEmpty(row - 1, col + dir)) {
 		pickUpBlock(row, col + dir);
-		return { lift: true };
+		return { 
+			move: 'Down', 
+			pickUp: true 
+		};
 	}
-	return null;
+	return false;
 }
 
 function isEmpty(i, j) {
@@ -196,10 +203,7 @@ function dropBlock(i, j) {
 	}
 	map[gravity][j] = BLOCK;
 	carrying = false;
-	return {
-		row: gravity,
-		col: j
-	};
+	return { row: gravity, col: j };
 }
 
 // UNDO FUNCTIONS
@@ -208,13 +212,13 @@ function undo() {
 	if (undoMoves.length) {
 		let move = undoMoves.pop();
 		redoMoves.push(move);
-		dir *= move.flip || 1;
 		row -= move.fall || 0;
-		col -= move.step || 0;
+		col -= dir * (move.step || 0);
+		dir *= move.turn || 1;
 		if (move.drop) {
 			map[move.drop.row][move.drop.col] = EMPTY;
 			carrying = true;
-		} else if (move.lift) {
+		} else if (move.pickUp) {
 			map[row][col + dir] = BLOCK;
 			carrying = false;
 		}
@@ -226,13 +230,13 @@ function redo() {
 	if (redoMoves.length) {
 		let move = redoMoves.pop();
 		undoMoves.push(move);
-		dir *= move.flip || 1;
+		dir *= move.turn || 1;
+		col += dir * (move.step || 0);
 		row += move.fall || 0;
-		col += move.step || 0;
 		if (move.drop) {
 			map[move.drop.row][move.drop.col] = BLOCK;
 			carrying = false;
-		} else if (move.lift) {
+		} else if (move.pickUp) {
 			map[row][col + dir] = EMPTY;
 			carrying = true;
 		}
@@ -311,6 +315,8 @@ window.onload = function() {
 var backgroundIndex = 0;
 
 const BACKGROUNDS = [
+	"#B7C8B6",
+	"#73B1B7",
 	"#D8D8BF",
 	"#CBCAB6",
 	"#D0D2C4", //
