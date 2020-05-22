@@ -6,15 +6,16 @@ body {
 	background-color: #E0DFDB;
 }
 
-#controlBox {
-	border: 1px dotted black;
-	
-	padding: 4px;
+.sidebar {
 	display: inline-block;
 	vertical-align: top;
 }
 
-#controlBox > *:not(:last-child) {
+#controls {
+	margin-bottom: 10px;
+}
+
+#controls > *:not(:last-child) {
 	margin-bottom: 6px;
 }
 
@@ -27,6 +28,16 @@ canvas {
 
 	margin-right: 24px;
 	margin-bottom: 24px;
+}
+
+#history {
+	display: inline-block;
+	width: 256px;
+	overflow-wrap: break-word;
+}
+
+#redo {
+	color: rgba(0, 0, 0, .33);
 }
 
 .hide {

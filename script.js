@@ -45,7 +45,10 @@ function draw() {
 	if (carrying) {
 		drawSprite(row - 1, col, BLOCK);
 	}
-	document.getElementById('history').innerText = undoMoves.map(m => m.move[0]).join('');
+	document.getElementById('undo').innerText = undoMoves.map(m => m.move[0]).join('');
+	let redoMoveCodes = redoMoves.map(m => m.move[0]);
+	redoMoveCodes.reverse();
+	document.getElementById('redo').innerText = redoMoveCodes.join('');
 }
 
 function drawSprite(i, j, sprite) {
@@ -123,7 +126,7 @@ function moveDirection(move, newDir) {
 	if (isEmpty(row, col + dir)) {
 		col += dir;
 		moved = true;
-		result.step = 1;
+		result.step = dir;
 		if (carrying && !isEmpty(row - 1, col)) {
 			result.drop = dropBlock(row - 1, col - dir);
 		}
@@ -158,7 +161,7 @@ function up() {
 			&& (!carrying || isEmpty(row - 2, col + dir))) {
 		col += dir;
 		row--;
-		return { move: 'Up', step: 1, fall: -1 };
+		return { move: 'Up', step: dir, fall: -1 };
 	}
 	return false;
 }
@@ -212,12 +215,11 @@ function undo() {
 	if (undoMoves.length) {
 		let move = undoMoves.pop();
 		redoMoves.push(move);
-		row -= move.fall || 0;
-		col -= dir * (move.step || 0);
 		dir *= move.turn || 1;
+		col -= move.step || 0;
+		row -= move.fall || 0;
 		if (move.drop) {
-			map[move.drop.row][move.drop.col] = EMPTY;
-			carrying = true;
+			pickUpBlock(move.drop.row, move.drop.col);
 		} else if (move.pickUp) {
 			map[row][col + dir] = BLOCK;
 			carrying = false;
@@ -231,20 +233,26 @@ function redo() {
 		let move = redoMoves.pop();
 		undoMoves.push(move);
 		dir *= move.turn || 1;
-		col += dir * (move.step || 0);
+		col += move.step || 0;
 		row += move.fall || 0;
 		if (move.drop) {
 			map[move.drop.row][move.drop.col] = BLOCK;
 			carrying = false;
 		} else if (move.pickUp) {
-			map[row][col + dir] = EMPTY;
-			carrying = true;
+			pickUpBlock(row, col + dir);
 		}
 		draw();
 	}
 }
 
 // LEVEL FUNCTIONS
+
+function setLevel(newLevelIndex) {
+	levelIndex = newLevelIndex;
+	undoMoves.length = 0;
+	redoMoves.length = 0;
+	loadLevel();
+}
 
 function loadLevel() {
 	let level = levels[levelIndex];
@@ -253,25 +261,24 @@ function loadLevel() {
 	col = level.col;
 	dir = level.dir;
 	carrying = level.carrying || false;
-	undoMoves.length = 0;
-	redoMoves.length = 0;
 	draw();
 }
 
 function nextLevel() {
-	levelIndex = (levelIndex + 1) % levels.length;
-	loadLevel();
+	setLevel((levelIndex + 1) % levels.length);
 	document.getElementById('levelSelector').value = levelIndex;
 }
 
 function restart() {
 	loadLevel();
+	while (undoMoves.length) {
+		redoMoves.push(undoMoves.pop());
+	}
 	draw();
 }
 
 function selectLevel() {
-	levelIndex = Number(document.getElementById('levelSelector').value);
-	loadLevel();
+	setLevel(Number(document.getElementById('levelSelector').value));
 }
 
 function setAutoClimb() {
@@ -279,7 +286,7 @@ function setAutoClimb() {
 }
 
 function toggleControls() {
-	document.getElementById('controlBox').classList.toggle('hide');
+	document.getElementById('controls').classList.toggle('hide');
 }
 
 function rescale(newScale) {
