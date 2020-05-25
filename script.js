@@ -1,5 +1,18 @@
 'use strict';
-	
+
+const SPRITE_SRC_SIZE = 8;
+const BASE_SCREEN_WIDTH = SPRITE_SRC_SIZE * 29;
+const BASE_SCREEN_HEIGHT = SPRITE_SRC_SIZE * 19;
+
+const BASE_SCALE = 3;
+
+var scale = BASE_SCALE;
+var spriteDispSize = SPRITE_SRC_SIZE * BASE_SCALE;
+
+var sprites;
+var canvas;
+var context;
+
 const EMPTY = 0;
 const WALL = 1;
 const BLOCK = 2;
@@ -7,18 +20,7 @@ const GOAL = 3;
 const DUDE_LEFT = 4;
 const DUDE_RIGHT = 5;
 
-const SPRITE_SRC_SIZE = 8;
-const BASE_SCREEN_WIDTH = SPRITE_SRC_SIZE * 29;
-const BASE_SCREEN_HEIGHT = SPRITE_SRC_SIZE * 19;
-
-var scale = 3;
-var spriteDispSize = SPRITE_SRC_SIZE * scale;
-
 var levels = getLevels();
-
-var sprites;
-var canvas;
-var context;
 
 var map;
 var row;
@@ -27,7 +29,7 @@ var dir;
 var carrying;
 
 var levelIndex = 0;
-var autoClimb;
+var autoClimb = true;
 
 var undoMoves = [];
 var redoMoves = [];
@@ -45,6 +47,16 @@ function draw() {
 	if (carrying) {
 		drawSprite(row - 1, col, BLOCK);
 	}
+	displayMoveHistory();
+}
+
+function displayMoveHistory() {
+	/*
+	document.getElementById('undo').innerText = undoMoves.map(m => m.move[0]).join('');
+	let redoMoveCodes = redoMoves.map(m => m.move[0]);
+	redoMoveCodes.reverse();
+	document.getElementById('redo').innerText = redoMoveCodes.join('');
+	*/
 }
 
 function drawSprite(i, j, sprite) {
@@ -79,6 +91,9 @@ function key(event) {
 		case 'm':
 			restart();
 			break;
+		case 'l':
+			toggleAutoClimb();
+			break;
 		case 'b':
 			document.body.style.backgroundColor = BACKGROUNDS[backgroundIndex++ % BACKGROUNDS.length];
 			break;
@@ -102,21 +117,21 @@ function key(event) {
 // MOVE FUNCTION
 
 function left() {			
-	return moveDirection(-1);
+	return moveDirection('Left', -1);
 }
 
 function right() {
-	return moveDirection(1);
+	return moveDirection('Right', 1);
 }
 
-function moveDirection(newDir) {
+function moveDirection(move, newDir) {
 	let moved = false;
-	let result = {};
+	let result = { move: move };
 	
 	if (dir != newDir) {
 		dir = newDir;
 		moved = true;
-		result.flip = -1;
+		result.turn = -1;
 	}
 
 	if (isEmpty(row, col + dir)) {
@@ -142,7 +157,7 @@ function moveDirection(newDir) {
 	if (autoClimb) {
 		return up();
 	}
-	return null;
+	return false;
 }
 
 function up() {
@@ -157,15 +172,15 @@ function up() {
 			&& (!carrying || isEmpty(row - 2, col + dir))) {
 		col += dir;
 		row--;
-		return { step: dir, fall: -1 };
+		return {move: 'Up', step: dir, fall: -1};
 	}
-	return null;
+	return false;
 }
 
 function down() {
 	if (carrying) {
 		if (map[row - 1][col + dir] == EMPTY) {
-			return { drop: dropBlock(row - 1, col + dir) };
+			return {move: 'Down', drop: dropBlock(row - 1, col + dir)};
 		}
 	} else if (
 			// space in front of you must be a block
@@ -175,9 +190,9 @@ function down() {
 			// space over the block must be clear
 			&& isEmpty(row - 1, col + dir)) {
 		pickUpBlock(row, col + dir);
-		return { lift: true };
+		return {move: 'Down', pickUp: true};
 	}
-	return null;
+	return false;
 }
 
 function isEmpty(i, j) {
@@ -196,10 +211,7 @@ function dropBlock(i, j) {
 	}
 	map[gravity][j] = BLOCK;
 	carrying = false;
-	return {
-		row: gravity,
-		col: j
-	};
+	return { row: gravity, col: j };
 }
 
 // UNDO FUNCTIONS
@@ -208,13 +220,12 @@ function undo() {
 	if (undoMoves.length) {
 		let move = undoMoves.pop();
 		redoMoves.push(move);
-		dir *= move.flip || 1;
-		row -= move.fall || 0;
+		dir *= move.turn || 1;
 		col -= move.step || 0;
+		row -= move.fall || 0;
 		if (move.drop) {
-			map[move.drop.row][move.drop.col] = EMPTY;
-			carrying = true;
-		} else if (move.lift) {
+			pickUpBlock(move.drop.row, move.drop.col);
+		} else if (move.pickUp) {
 			map[row][col + dir] = BLOCK;
 			carrying = false;
 		}
@@ -226,15 +237,14 @@ function redo() {
 	if (redoMoves.length) {
 		let move = redoMoves.pop();
 		undoMoves.push(move);
-		dir *= move.flip || 1;
-		row += move.fall || 0;
+		dir *= move.turn || 1;
 		col += move.step || 0;
+		row += move.fall || 0;
 		if (move.drop) {
 			map[move.drop.row][move.drop.col] = BLOCK;
 			carrying = false;
-		} else if (move.lift) {
-			map[row][col + dir] = EMPTY;
-			carrying = true;
+		} else if (move.pickUp) {
+			pickUpBlock(row, col + dir);
 		}
 		draw();
 	}
@@ -249,25 +259,36 @@ function loadLevel() {
 	col = level.col;
 	dir = level.dir;
 	carrying = level.carrying || false;
-	undoMoves.length = 0;
-	redoMoves.length = 0;
 	draw();
-}
-
-function nextLevel() {
-	levelIndex = (levelIndex + 1) % levels.length;
-	loadLevel();
-	document.getElementById('levelSelector').value = levelIndex;
 }
 
 function restart() {
 	loadLevel();
+	while (undoMoves.length) {
+		redoMoves.push(undoMoves.pop());
+	}
 	draw();
 }
 
-function selectLevel() {
-	levelIndex = Number(document.getElementById('levelSelector').value);
+function setLevel(newLevelIndex) {
+	levelIndex = newLevelIndex;
+	undoMoves.length = 0;
+	redoMoves.length = 0;
 	loadLevel();
+}
+
+function nextLevel() {
+	setLevel((levelIndex + 1) % levels.length);
+	document.getElementById('levelSelector').value = levelIndex;
+}
+
+function selectLevel() {
+	setLevel(Number(document.getElementById('levelSelector').value));
+}
+
+function toggleAutoClimb() {
+	autoClimb ^= true;
+	document.getElementById('autoClimb').checked = autoClimb;
 }
 
 function setAutoClimb() {
@@ -275,14 +296,11 @@ function setAutoClimb() {
 }
 
 function toggleControls() {
-	document.getElementById('controlBox').classList.toggle('hide');
+	document.getElementById('controls').classList.toggle('hide');
 }
 
 function rescale(newScale) {
-	scale = newScale;
-	spriteDispSize = SPRITE_SRC_SIZE * scale;
-	canvas.width = BASE_SCREEN_WIDTH * scale;
-	canvas.height = BASE_SCREEN_HEIGHT * scale;
+	setScale(newScale);
 	context.imageSmoothingEnabled = false;
 	draw();
 }
@@ -296,6 +314,10 @@ function copy(_2dArray) {
 window.onload = function() {
 	canvas = document.getElementById('screen');
 	context = canvas.getContext('2d');
+	if (window.devicePixelRatio == 1.5) {
+		// check for other ratios?
+		setScale(2);
+	}
 	context.imageSmoothingEnabled = false;
 	document.getElementById('levelSelector').value = 0;
 	setAutoClimb();
@@ -306,11 +328,20 @@ window.onload = function() {
 	sprites.src = 'sprites.png';
 };
 
+function setScale(newScale) {
+	scale = newScale;
+	spriteDispSize = SPRITE_SRC_SIZE * scale;
+	canvas.width = BASE_SCREEN_WIDTH * scale;
+	canvas.height = BASE_SCREEN_HEIGHT * scale;
+}
+
 // EXPERIMENTAL
 
 var backgroundIndex = 0;
 
 const BACKGROUNDS = [
+	"#B7C8B6",
+	"#73B1B7",
 	"#D8D8BF",
 	"#CBCAB6",
 	"#D0D2C4", //
