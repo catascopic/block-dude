@@ -1,5 +1,18 @@
 'use strict';
-	
+
+const SPRITE_SRC_SIZE = 8;
+const BASE_SCREEN_WIDTH = SPRITE_SRC_SIZE * 29;
+const BASE_SCREEN_HEIGHT = SPRITE_SRC_SIZE * 19;
+
+const BASE_SCALE = 3;
+
+var scale = BASE_SCALE;
+var spriteDispSize = SPRITE_SRC_SIZE * BASE_SCALE;
+
+var sprites;
+var canvas;
+var context;
+
 const EMPTY = 0;
 const WALL = 1;
 const BLOCK = 2;
@@ -7,18 +20,7 @@ const GOAL = 3;
 const DUDE_LEFT = 4;
 const DUDE_RIGHT = 5;
 
-const SPRITE_SRC_SIZE = 8;
-const BASE_SCREEN_WIDTH = SPRITE_SRC_SIZE * 29;
-const BASE_SCREEN_HEIGHT = SPRITE_SRC_SIZE * 19;
-
-var scale = 3;
-var spriteDispSize = SPRITE_SRC_SIZE * scale;
-
 var levels = getLevels();
-
-var sprites;
-var canvas;
-var context;
 
 var map;
 var row;
@@ -27,7 +29,7 @@ var dir;
 var carrying;
 
 var levelIndex = 0;
-var autoClimb;
+var autoClimb = true;
 
 var undoMoves = [];
 var redoMoves = [];
@@ -45,10 +47,16 @@ function draw() {
 	if (carrying) {
 		drawSprite(row - 1, col, BLOCK);
 	}
+	displayMoveHistory();
+}
+
+function displayMoveHistory() {
+	/*
 	document.getElementById('undo').innerText = undoMoves.map(m => m.move[0]).join('');
 	let redoMoveCodes = redoMoves.map(m => m.move[0]);
 	redoMoveCodes.reverse();
 	document.getElementById('redo').innerText = redoMoveCodes.join('');
+	*/
 }
 
 function drawSprite(i, j, sprite) {
@@ -82,6 +90,9 @@ function key(event) {
 			break;
 		case 'm':
 			restart();
+			break;
+		case 'l':
+			toggleAutoClimb();
 			break;
 		case 'b':
 			document.body.style.backgroundColor = BACKGROUNDS[backgroundIndex++ % BACKGROUNDS.length];
@@ -161,7 +172,7 @@ function up() {
 			&& (!carrying || isEmpty(row - 2, col + dir))) {
 		col += dir;
 		row--;
-		return { move: 'Up', step: dir, fall: -1 };
+		return {move: 'Up', step: dir, fall: -1};
 	}
 	return false;
 }
@@ -169,10 +180,7 @@ function up() {
 function down() {
 	if (carrying) {
 		if (map[row - 1][col + dir] == EMPTY) {
-			return { 
-				move: 'Down',
-				drop: dropBlock(row - 1, col + dir) 
-			};
+			return {move: 'Down', drop: dropBlock(row - 1, col + dir)};
 		}
 	} else if (
 			// space in front of you must be a block
@@ -182,10 +190,7 @@ function down() {
 			// space over the block must be clear
 			&& isEmpty(row - 1, col + dir)) {
 		pickUpBlock(row, col + dir);
-		return { 
-			move: 'Down', 
-			pickUp: true 
-		};
+		return {move: 'Down', pickUp: true};
 	}
 	return false;
 }
@@ -247,13 +252,6 @@ function redo() {
 
 // LEVEL FUNCTIONS
 
-function setLevel(newLevelIndex) {
-	levelIndex = newLevelIndex;
-	undoMoves.length = 0;
-	redoMoves.length = 0;
-	loadLevel();
-}
-
 function loadLevel() {
 	let level = levels[levelIndex];
 	map = copy(level.map);
@@ -264,11 +262,6 @@ function loadLevel() {
 	draw();
 }
 
-function nextLevel() {
-	setLevel((levelIndex + 1) % levels.length);
-	document.getElementById('levelSelector').value = levelIndex;
-}
-
 function restart() {
 	loadLevel();
 	while (undoMoves.length) {
@@ -277,8 +270,25 @@ function restart() {
 	draw();
 }
 
+function setLevel(newLevelIndex) {
+	levelIndex = newLevelIndex;
+	undoMoves.length = 0;
+	redoMoves.length = 0;
+	loadLevel();
+}
+
+function nextLevel() {
+	setLevel((levelIndex + 1) % levels.length);
+	document.getElementById('levelSelector').value = levelIndex;
+}
+
 function selectLevel() {
 	setLevel(Number(document.getElementById('levelSelector').value));
+}
+
+function toggleAutoClimb() {
+	autoClimb ^= true;
+	document.getElementById('autoClimb').checked = autoClimb;
 }
 
 function setAutoClimb() {
@@ -290,10 +300,7 @@ function toggleControls() {
 }
 
 function rescale(newScale) {
-	scale = newScale;
-	spriteDispSize = SPRITE_SRC_SIZE * scale;
-	canvas.width = BASE_SCREEN_WIDTH * scale;
-	canvas.height = BASE_SCREEN_HEIGHT * scale;
+	setScale(newScale);
 	context.imageSmoothingEnabled = false;
 	draw();
 }
@@ -307,6 +314,10 @@ function copy(_2dArray) {
 window.onload = function() {
 	canvas = document.getElementById('screen');
 	context = canvas.getContext('2d');
+	if (window.devicePixelRatio == 1.5) {
+		// check for other ratios?
+		setScale(2);
+	}
 	context.imageSmoothingEnabled = false;
 	document.getElementById('levelSelector').value = 0;
 	setAutoClimb();
@@ -316,6 +327,13 @@ window.onload = function() {
 	}, false);
 	sprites.src = 'sprites.png';
 };
+
+function setScale(newScale) {
+	scale = newScale;
+	spriteDispSize = SPRITE_SRC_SIZE * scale;
+	canvas.width = BASE_SCREEN_WIDTH * scale;
+	canvas.height = BASE_SCREEN_HEIGHT * scale;
+}
 
 // EXPERIMENTAL
 
