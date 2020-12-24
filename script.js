@@ -60,11 +60,13 @@ function displayMoveHistory() {
 }
 
 function drawSprite(i, j, sprite) {
-	context.drawImage(sprites,
-			// sprite x, y, h, w
-			sprite * SPRITE_SRC_SIZE, 0, SPRITE_SRC_SIZE, SPRITE_SRC_SIZE,
-			// canvas x, y, h, w
-			j * spriteDispSize, i * spriteDispSize, spriteDispSize, spriteDispSize);
+	if (sprite) {
+		context.drawImage(sprites,
+				// sprite x, y, h, w
+				sprite * SPRITE_SRC_SIZE, 0, SPRITE_SRC_SIZE, SPRITE_SRC_SIZE,
+				// canvas x, y, h, w
+				j * spriteDispSize, i * spriteDispSize, spriteDispSize, spriteDispSize);
+	}
 }
 
 function key(event) {
