@@ -20,8 +20,6 @@ const GOAL = 3;
 const DUDE_LEFT = 4;
 const DUDE_RIGHT = 5;
 
-var levels = getLevels();
-
 var map;
 var row;
 var col;
@@ -71,17 +69,17 @@ function drawSprite(i, j, sprite) {
 
 function key(event) {
 	let moved = null;
-	switch(event.key) {
-		case 'a': case 'ArrowLeft': 
+	switch(event.key.toLowerCase()) {
+		case 'a': case 'arrowleft': 
 			moved = left();
 			break;
-		case 'd': case 'ArrowRight':
+		case 'd': case 'arrowright':
 			moved = right();
 			break;
-		case 'w': case 'ArrowUp':
+		case 'w': case 'arrowup':
 			moved = up();
 			break;
-		case 's': case 'ArrowDown': 
+		case 's': case 'arrowdown': 
 			moved = down();
 			break;
 		case 'z':
@@ -97,9 +95,9 @@ function key(event) {
 			toggleAutoClimb();
 			break;
 		case 'b':
-			document.body.style.backgroundColor = BACKGROUNDS[backgroundIndex++ % BACKGROUNDS.length];
+			setBackground(event.shiftKey ? BACKGROUNDS.length - 1 : 1);
 			break;
-		case 'Enter':
+		case 'enter':
 			toggleControls();
 			break;
 		default:
@@ -255,7 +253,7 @@ function redo() {
 // LEVEL FUNCTIONS
 
 function loadLevel() {
-	let level = levels[levelIndex];
+	let level = LEVELS[levelIndex];
 	map = copy(level.map);
 	row = level.row;
 	col = level.col;
@@ -280,7 +278,7 @@ function setLevel(newLevelIndex) {
 }
 
 function nextLevel() {
-	setLevel((levelIndex + 1) % levels.length);
+	setLevel((levelIndex + 1) % LEVELS.length);
 	document.getElementById('levelSelector').value = levelIndex;
 }
 
@@ -342,13 +340,16 @@ function setScale(newScale) {
 var backgroundIndex = 0;
 
 const BACKGROUNDS = [
-	"#B7C8B6",
-	"#73B1B7",
-	"#D8D8BF",
-	"#CBCAB6",
-	"#D0D2C4", //
-	"#E8F1D4",
-	"#E0DFDB", //
-	"#C6C3B5",
-	"white"
+	{ color: 'black', backgroundColor: '#E0DFDB' },
+	{ color: 'black', backgroundColor: '#B7C8B6' },
+	{ color: 'black', backgroundColor: '#73B1B7' },
+	{ color: 'black', backgroundColor: '#D8D8BF' },
+	{ color: 'black', backgroundColor: 'white' },
+	{ color: '#BBBBBB', backgroundColor: '#24388a' },
 ];
+
+function setBackground(d) {
+	backgroundIndex += d;
+	backgroundIndex %= BACKGROUNDS.length;
+	Object.assign(document.body.style, BACKGROUNDS[backgroundIndex]);
+}
