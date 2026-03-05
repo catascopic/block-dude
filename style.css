@@ -23,7 +23,7 @@ body {
 }
 
 canvas {
-	padding: 24px;
+	margin: 24px;
 	display: inline-block;
 
 	image-rendering: pixelated;

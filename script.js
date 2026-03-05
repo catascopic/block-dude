@@ -112,24 +112,18 @@ function touch(e) {
 	let touchJ = (e.clientX - bounding.left) / spriteDispSize;
 	let spriteI = Math.trunc(touchI);
 	let spriteJ = Math.trunc(touchJ);
-	console.log(Math.abs(touchJ - col - .5) <= 1 ? 'YES' : 'NO');
-	let moved = null;
+	console.log(spriteI, spriteJ);
 	if (spriteI == row && spriteJ == col) {
 		undo();
-	} else {
-		if (Math.abs(touchJ - col - .5) <= 1 /* below diagonal */) {
-			if (touchI < row) {
-				moved = up();
-			} else {
-				moved = down();
-			}
+	} else if (spriteI < row || Math.abs(spriteI - row) <= Math.abs(spriteJ - col)) {
+		console.log('left/right');
+		if (spriteJ < col) {
+			left();
 		} else {
-			if (spriteJ < col) {
-				moved = left();
-			} else {
-				moved = right();
-			}
+			right();
 		}
+	} else {
+		down();
 	}
 	e.preventDefault();
 }
