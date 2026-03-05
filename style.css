@@ -4,9 +4,12 @@
 
 body {
 	background-color: #E0DFDB;
+	padding: 0;
+	margin: 0
 }
 
 .sidebar {
+	margin: 8px;
 	display: inline-block;
 	vertical-align: top;
 }
@@ -20,6 +23,7 @@ body {
 }
 
 canvas {
+	margin: 24px;
 	display: inline-block;
 
 	image-rendering: pixelated;

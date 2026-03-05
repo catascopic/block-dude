@@ -67,9 +67,9 @@ function drawSprite(i, j, sprite) {
 	}
 }
 
-function key(event) {
+function key(e) {
 	let moved = null;
-	switch(event.key.toLowerCase()) {
+	switch(e.key.toLowerCase()) {
 		case 'a': case 'arrowleft': 
 			moved = left();
 			break;
@@ -95,7 +95,7 @@ function key(event) {
 			toggleAutoClimb();
 			break;
 		case 'b':
-			setBackground(event.shiftKey ? BACKGROUNDS.length - 1 : 1);
+			setBackground(e.shiftKey ? BACKGROUNDS.length - 1 : 1);
 			break;
 		case 'enter':
 			toggleControls();
@@ -103,7 +103,43 @@ function key(event) {
 		default:
 			return;
 	}
-	event.preventDefault();
+	e.preventDefault();
+	if (map[row][col] == GOAL) {
+		nextLevel();
+	} else if (moved) {
+		undoMoves.push(moved);
+		// is this the best way to clear the stack?
+		redoMoves.length = 0;
+		draw();
+	}
+}
+
+function touch(e) {
+	let bounding = canvas.getBoundingClientRect();
+	let touchI = Math.trunc((e.clientY - bounding.top ) / spriteDispSize);
+	let touchJ = Math.trunc((e.clientX - bounding.left) / spriteDispSize);
+	console.log(touchI, touchJ, row, col);
+	let moved = null;
+	if (touchI == row && touchJ == col) {
+		undo();
+	} else {
+		let deltaI = touchI - row;
+		let deltaJ = touchJ - col;
+		if (Math.abs(deltaI) > Math.abs(deltaJ)) {
+			if (deltaI < 0) {
+				moved = up();
+			} else {
+				moved = down();
+			}
+		} else {
+			if (deltaJ < 0) {
+				moved = left();
+			} else {
+				moved = right();
+			}
+		}
+	}
+	e.preventDefault();
 	if (map[row][col] == GOAL) {
 		nextLevel();
 	} else if (moved) {
@@ -124,7 +160,7 @@ function right() {
 	return moveDirection('Right', 1);
 }
 
-function moveDirection(move, newDir) {
+function moveDirection(move, newDir, climb=false) {
 	let moved = false;
 	let result = { move: move };
 	
@@ -154,10 +190,10 @@ function moveDirection(move, newDir) {
 	if (moved) {
 		return result;
 	}
-	if (autoClimb) {
+	if (climb || autoClimb) {
 		return up();
 	}
-	return false;
+	return null;
 }
 
 function up() {
@@ -174,7 +210,7 @@ function up() {
 		row--;
 		return {move: 'Up', step: dir, fall: -1};
 	}
-	return false;
+	return null;
 }
 
 function down() {
@@ -192,7 +228,7 @@ function down() {
 		pickUpBlock(row, col + dir);
 		return {move: 'Down', pickUp: true};
 	}
-	return false;
+	return null;
 }
 
 function isEmpty(i, j) {
