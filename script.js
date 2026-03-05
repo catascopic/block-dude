@@ -116,23 +116,23 @@ function key(e) {
 
 function touch(e) {
 	let bounding = canvas.getBoundingClientRect();
-	let touchI = Math.trunc((e.clientY - bounding.top ) / spriteDispSize);
-	let touchJ = Math.trunc((e.clientX - bounding.left) / spriteDispSize);
-	console.log(touchI, touchJ, row, col);
+	let touchI = (e.clientY - bounding.top ) / spriteDispSize;
+	let touchJ = (e.clientX - bounding.left) / spriteDispSize;
+	let spriteI = Math.trunc(touchI);
+	let spriteJ = Math.trunc(touchJ);
+	console.log(Math.abs(touchJ - col - .5) <= 1 ? 'YES' : 'NO');
 	let moved = null;
-	if (touchI == row && touchJ == col) {
+	if (spriteI == row && spriteJ == col) {
 		undo();
 	} else {
-		let deltaI = touchI - row;
-		let deltaJ = touchJ - col;
-		if (Math.abs(deltaI) > Math.abs(deltaJ)) {
-			if (deltaI < 0) {
+		if (Math.abs(touchJ - col - .5) <= 1 /* below diagonal */) {
+			if (touchI < row) {
 				moved = up();
 			} else {
 				moved = down();
 			}
 		} else {
-			if (deltaJ < 0) {
+			if (spriteJ < col) {
 				moved = left();
 			} else {
 				moved = right();
