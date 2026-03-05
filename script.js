@@ -49,21 +49,21 @@ function draw() {
 }
 
 function displayMoveHistory() {
-	/*
-	document.getElementById('undo').innerText = undoMoves.map(m => m.move[0]).join('');
-	let redoMoveCodes = redoMoves.map(m => m.move[0]);
+	document.getElementById('undo').innerText = undoMoves.map(m => m.name).join('');
+	let redoMoveCodes = redoMoves.map(m => m.name);
 	redoMoveCodes.reverse();
 	document.getElementById('redo').innerText = redoMoveCodes.join('');
-	*/
 }
 
 function drawSprite(i, j, sprite) {
 	if (sprite) {
-		context.drawImage(sprites,
-				// sprite x, y, h, w
-				sprite * SPRITE_SRC_SIZE, 0, SPRITE_SRC_SIZE, SPRITE_SRC_SIZE,
-				// canvas x, y, h, w
-				j * spriteDispSize, i * spriteDispSize, spriteDispSize, spriteDispSize);
+		context.drawImage(
+			sprites,
+			// sprite x, y, h, w
+			sprite * SPRITE_SRC_SIZE, 0, SPRITE_SRC_SIZE, SPRITE_SRC_SIZE,
+			// canvas x, y, h, w
+			j * spriteDispSize, i * spriteDispSize, spriteDispSize, spriteDispSize
+		);
 	}
 }
 
@@ -104,14 +104,6 @@ function key(e) {
 			return;
 	}
 	e.preventDefault();
-	if (map[row][col] == GOAL) {
-		nextLevel();
-	} else if (moved) {
-		undoMoves.push(moved);
-		// is this the best way to clear the stack?
-		redoMoves.length = 0;
-		draw();
-	}
 }
 
 function touch(e) {
@@ -140,42 +132,31 @@ function touch(e) {
 		}
 	}
 	e.preventDefault();
-	if (map[row][col] == GOAL) {
-		nextLevel();
-	} else if (moved) {
-		undoMoves.push(moved);
-		// is this the best way to clear the stack?
-		redoMoves.length = 0;
-		draw();
-	}
 }
 
-// MOVE FUNCTION
+// MOVE FUNCTIONS
 
 function left() {			
-	return moveDirection('Left', -1);
+	return moveDirection('🠜', -1);
 }
 
 function right() {
-	return moveDirection('Right', 1);
+	return moveDirection('🠞', 1);
 }
 
-function moveDirection(move, newDir, climb=false) {
-	let moved = false;
-	let result = { move: move };
-	
+function moveDirection(name, newDir, climb=false) {
+	let move = { name };
+
 	if (dir != newDir) {
 		dir = newDir;
-		moved = true;
-		result.turn = -1;
+		move.turn = -1;
 	}
 
 	if (isEmpty(row, col + dir)) {
 		col += dir;
-		moved = true;
-		result.step = dir;
+		move.step = dir;
 		if (carrying && !isEmpty(row - 1, col)) {
-			result.drop = dropBlock(row - 1, col - dir);
+			move.drop = dropBlock(row - 1, col - dir);
 		}
 		if (isEmpty(row + 1, col)) {
 			let gravity = 0
@@ -183,52 +164,60 @@ function moveDirection(move, newDir, climb=false) {
 				gravity++;
 			} while (isEmpty(row + gravity + 1, col));
 			row += gravity;
-			result.fall = gravity;
+			move.fall = gravity;
 		}
 	}
-	
-	if (moved) {
-		return result;
+
+	if (move.turn || move.step) {
+		finishMove(move);
+	} else if (climb || autoClimb) {
+		up();
 	}
-	if (climb || autoClimb) {
-		return up();
-	}
-	return null;
 }
 
 function up() {
 	if (
-			// space in front of you must be solid
-			!isEmpty(row, col + dir)
-			// space over your head you must be clear
-			&& isEmpty(row - 1, col)
-			// space you're climbing to must be clear
-			&& isEmpty(row - 1, col + dir) 
-			// if you're carrying a block, 2 spaces over your head must be clear
-			&& (!carrying || isEmpty(row - 2, col + dir))) {
+		// space in front of you must be solid
+		!isEmpty(row, col + dir)
+		// space over your head you must be clear
+		&& isEmpty(row - 1, col)
+		// space you're climbing to must be clear
+		&& isEmpty(row - 1, col + dir) 
+		// if you're carrying a block, 2 spaces over your head must be clear
+		&& (!carrying || isEmpty(row - 2, col + dir))
+	) {
 		col += dir;
 		row--;
-		return {move: 'Up', step: dir, fall: -1};
+		finishMove({ name: '🠝', step: dir, fall: -1 });
 	}
-	return null;
 }
 
 function down() {
 	if (carrying) {
 		if (map[row - 1][col + dir] == EMPTY) {
-			return {move: 'Down', drop: dropBlock(row - 1, col + dir)};
+			finishMove({ name: '🠟', drop: dropBlock(row - 1, col + dir) });
 		}
 	} else if (
-			// space in front of you must be a block
-			map[row][col + dir] == BLOCK
-			// space over your head must be clear
-			&& isEmpty(row - 1, col)
-			// space over the block must be clear
-			&& isEmpty(row - 1, col + dir)) {
+		// space in front of you must be a block
+		map[row][col + dir] == BLOCK
+		// space over your head must be clear
+		&& isEmpty(row - 1, col)
+		// space over the block must be clear
+		&& isEmpty(row - 1, col + dir)
+	) {
 		pickUpBlock(row, col + dir);
-		return {move: 'Down', pickUp: true};
+		finishMove({ name: '🠟', pickUp: true });
 	}
-	return null;
+}
+
+function finishMove(move) {
+	if (map[row][col] == GOAL) {
+		nextLevel();
+	} else {
+		undoMoves.push(move);
+		redoMoves.length = 0;
+		draw();
+	}
 }
 
 function isEmpty(i, j) {
@@ -289,20 +278,16 @@ function redo() {
 // LEVEL FUNCTIONS
 
 function loadLevel() {
-	let level = LEVELS[levelIndex];
-	map = copy(level.map);
-	row = level.row;
-	col = level.col;
-	dir = level.dir;
-	carrying = level.carrying || false;
+	({ map, row, col, dir, carrying = false } = LEVELS[levelIndex]);
+	map = structuredClone(map);
 	draw();
 }
 
 function restart() {
 	loadLevel();
-	while (undoMoves.length) {
-		redoMoves.push(undoMoves.pop());
-	}
+	undoMoves.reverse();
+	redoMoves.push(...undoMoves);
+	undoMoves.length = 0;
 	draw();
 }
 
@@ -327,10 +312,6 @@ function toggleAutoClimb() {
 	document.getElementById('autoClimb').checked = autoClimb;
 }
 
-function setAutoClimb() {
-	autoClimb = document.getElementById('autoClimb').checked;
-}
-
 function toggleControls() {
 	document.getElementById('controls').classList.toggle('hide');
 }
@@ -339,12 +320,6 @@ function rescale(newScale) {
 	setScale(newScale);
 	context.imageSmoothingEnabled = false;
 	draw();
-}
-
-function copy(_2dArray) {
-	return _2dArray.map(function(subArray) {
-		return subArray.slice();
-	});
 }
 
 window.onload = function() {
@@ -356,7 +331,7 @@ window.onload = function() {
 	}
 	context.imageSmoothingEnabled = false;
 	document.getElementById('levelSelector').value = 0;
-	setAutoClimb();
+	autoClimb = document.getElementById('autoClimb').checked;
 	sprites = new Image();
 	sprites.addEventListener('load', function() {
 		loadLevel();

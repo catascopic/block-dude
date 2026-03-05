@@ -1,17 +1,17 @@
-* {
-	font-family: monospace;
-}
-
 body {
 	background-color: #E0DFDB;
-	padding: 0;
-	margin: 0
+	margin: 0;
+	display: flex;
 }
 
 .sidebar {
 	margin: 8px;
 	display: inline-block;
 	vertical-align: top;
+}
+
+* {
+	font-family: monospace;
 }
 
 #controls {
@@ -36,12 +36,13 @@ canvas {
 
 #history {
 	display: inline-block;
-	width: 256px;
+	font-size: 16px;
+	width: 16em;
 	overflow-wrap: break-word;
 }
 
 #redo {
-	color: rgba(0, 0, 0, .33);
+	color: rgba(0, 0, 0, .35);
 }
 
 .hide {
