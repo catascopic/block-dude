@@ -22,10 +22,11 @@ body {
 	margin-bottom: 6px;
 }
 
-canvas {
-	margin: 24px;
-	display: inline-block;
+.border {
+	padding: 24px;
+}
 
+canvas {
 	image-rendering: pixelated;
 	image-rendering: -moz-crisp-edges;
 	image-rendering: crisp-edges;

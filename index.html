@@ -8,7 +8,9 @@
 <title>Block Dude</title>
 </head>
 <body>
-<canvas id="screen" height="456" width="696" onclick="touch(event)"></canvas>
+<div class="border" onclick="touch(event)">
+	<canvas id="screen" height="456" width="696"></canvas>
+</div>
 <div class="sidebar">
 	<div id="controls">
 		<select onchange="selectLevel()" id="levelSelector">

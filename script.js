@@ -112,11 +112,9 @@ function touch(e) {
 	let touchJ = (e.clientX - bounding.left) / spriteDispSize;
 	let spriteI = Math.trunc(touchI);
 	let spriteJ = Math.trunc(touchJ);
-	console.log(spriteI, spriteJ);
 	if (spriteI == row && spriteJ == col) {
 		undo();
 	} else if (spriteI < row || Math.abs(spriteI - row) <= Math.abs(spriteJ - col)) {
-		console.log('left/right');
 		if (spriteJ < col) {
 			left();
 		} else {
