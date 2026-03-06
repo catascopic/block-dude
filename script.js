@@ -116,9 +116,9 @@ function touch(e) {
 		undo();
 	} else if (spriteI < row || Math.abs(spriteI - row) <= Math.abs(spriteJ - col)) {
 		if (spriteJ < col) {
-			left();
+			left(true);
 		} else {
-			right();
+			right(true);
 		}
 	} else {
 		down();
@@ -128,12 +128,12 @@ function touch(e) {
 
 // MOVE FUNCTIONS
 
-function left() {			
-	return moveDirection('🠜', -1);
+function left(climb=false) {			
+	return moveDirection('🠜', -1, climb);
 }
 
-function right() {
-	return moveDirection('🠞', 1);
+function right(climb=false) {
+	return moveDirection('🠞', 1, climb);
 }
 
 function moveDirection(name, newDir, climb=false) {
@@ -314,6 +314,10 @@ function rescale(newScale) {
 	draw();
 }
 
+function setAutoClimb() {
+	autoClimb = document.getElementById('autoClimb').checked;
+}
+
 window.onload = function() {
 	canvas = document.getElementById('screen');
 	context = canvas.getContext('2d');
@@ -323,7 +327,7 @@ window.onload = function() {
 	}
 	context.imageSmoothingEnabled = false;
 	document.getElementById('levelSelector').value = 0;
-	autoClimb = document.getElementById('autoClimb').checked;
+	setAutoClimb();
 	sprites = new Image();
 	sprites.addEventListener('load', function() {
 		loadLevel();
